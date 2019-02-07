@@ -1,5 +1,5 @@
 {
-  "name": "@xl-icon/icon-generator",
+  "name": "@xl-vision/icon-generator",
   "version": "0.0.1-beta.0",
   "description": "a tool for generate icon",
   "main": "src/index.js",
