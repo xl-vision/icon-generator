@@ -9,7 +9,7 @@ module.exports = {
     //支持绝对路径和相对路径，相对路径从项目根目录算起
     input: 'test/icons/**/*.svg',
     // 生成组件的名称，根据文件名生成
-    formater: name => name,
+    formater: name => `fa-${name}`,
     //支持绝对路径和相对路径，相对路径从项目根目录算起
     output: 'test/dist/a'
   },

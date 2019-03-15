@@ -125,7 +125,6 @@ module.exports = async (config) => {
     throw new Error('please provide "template" in config file')
   }
   const FILE_EXT = path.extname(templatePath)
-  console.log(FILE_EXT)
 
   templatePath = getAbsolutePath(templatePath)
   if (!fs.existsSync(templatePath)) {
@@ -137,9 +136,10 @@ module.exports = async (config) => {
   const templateContent = await fs.readFile(templatePath, {
     encoding: "utf-8"
   })
+  const render = template.compile(templateContent)
   IconPathArray.forEach(async it => {
     const message = await readIconMessage(it.input)
-    const ret = template.render(templateContent, {
+    const ret = render({
       name: it.name,
       message
     })
