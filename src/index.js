@@ -26,8 +26,22 @@ const getIconPathArray = async (pathMap) => {
   for (const pathItem of pathMap) {
     const paths = await glob(pathItem.input)
     paths.forEach(it => {
-      let name = path.basename(it, path.extname(it))
-      name = pathItem.formater(name)
+      const srcName = path.basename(it, path.extname(it))
+      //{name:'',filename:''}
+      let formatName = pathItem.formater(srcName)
+      if (typeof formatName === 'string') {
+        formatName = {
+          name: formatName,
+          filename: formatName
+        }
+      }
+      let name = formatName.name
+      let filename = formatName.filename
+
+      if(!name || !filename){
+        throw new Error(`the 'formater' in config has to return a string or a object include 'name' and 'filename'`)
+      }
+
       //首字符只能是字母或下划线，否则发出警告
       if (!name.match(/^[a-z_A-Z]/)) {
         console.warn(`the name of file '${it}' must start with charater or underline but '${name}'`)
@@ -35,9 +49,10 @@ const getIconPathArray = async (pathMap) => {
 
       // 名称必须是驼峰命名
       name = toCamel(name)
-
+      
       const ret = {
         name,
+        filename,
         input: it,
         output: pathItem.output
       }
@@ -140,10 +155,10 @@ module.exports = async (config) => {
   IconPathArray.forEach(async it => {
     const message = await readIconMessage(it.input)
     const ret = render({
-      name: it.name,
+      ...it,
       message
     })
-    const outputPath = getAbsolutePath(path.join(getAbsolutePath(it.output), `${it.name}${FILE_EXT}`))
+    const outputPath = getAbsolutePath(path.join(getAbsolutePath(it.output), `${it.filename}${FILE_EXT}`))
     await fs.outputFile(outputPath, ret)
   })
 }
