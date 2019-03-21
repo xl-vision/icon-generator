@@ -87,6 +87,7 @@ const readIconMessage = async (svgPath) => {
     encoding: "utf-8"
   })
   const optimizeData = await svgo.optimize(content)
+
   const optimizeContent = optimizeData.data
   const ret = await new Promise((resolve, reject) => {
     const handler = new htmlparser.DomHandler((err, dom) => {
@@ -97,7 +98,7 @@ const readIconMessage = async (svgPath) => {
         resolve(obj)
       }
     })
-    const parser = new htmlparser.Parser(handler)
+    const parser = new htmlparser.Parser(handler,{xmlMode: true})
     parser.write(optimizeContent)
     parser.end()
   })
@@ -151,6 +152,12 @@ module.exports = async (config) => {
   const templateContent = await fs.readFile(templatePath, {
     encoding: "utf-8"
   })
+
+  //自定义模板引擎配置
+  if(typeof config.templateEngine === 'function'){
+    config.templateEngine(template)
+  }
+
   const render = template.compile(templateContent)
   IconPathArray.forEach(async it => {
     const message = await readIconMessage(it.input)
