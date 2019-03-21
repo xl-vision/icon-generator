@@ -38,7 +38,7 @@ const getIconPathArray = async (pathMap) => {
       let name = formatName.name
       let filename = formatName.filename
 
-      if(!name || !filename){
+      if (!name || !filename) {
         throw new Error(`the 'formater' in config has to return a string or a object include 'name' and 'filename'`)
       }
 
@@ -49,7 +49,7 @@ const getIconPathArray = async (pathMap) => {
 
       // 名称必须是驼峰命名
       name = toCamel(name)
-      
+
       const ret = {
         name,
         filename,
@@ -98,7 +98,7 @@ const readIconMessage = async (svgPath) => {
         resolve(obj)
       }
     })
-    const parser = new htmlparser.Parser(handler,{xmlMode: true})
+    const parser = new htmlparser.Parser(handler, { xmlMode: true })
     parser.write(optimizeContent)
     parser.end()
   })
@@ -154,12 +154,13 @@ module.exports = async (config) => {
   })
 
   //自定义模板引擎配置
-  if(typeof config.templateEngine === 'function'){
+  if (typeof config.templateEngine === 'function') {
     config.templateEngine(template)
   }
 
   const render = template.compile(templateContent)
-  IconPathArray.forEach(async it => {
+  for (let i = 0; i < IconPathArray.length; i++) {
+    const it = IconPathArray[i]
     const message = await readIconMessage(it.input)
     const ret = render({
       ...it,
@@ -167,5 +168,5 @@ module.exports = async (config) => {
     })
     const outputPath = getAbsolutePath(path.join(getAbsolutePath(it.output), `${it.filename}${FILE_EXT}`))
     await fs.outputFile(outputPath, ret)
-  })
+  }
 }
