@@ -70,7 +70,7 @@ const svgo = new SVGOptim({
   },{
     removeDimensions: true,
   },{
-    removeAttrs: {attrs: '(stroke|fill)'},
+    removeAttrs: {attrs: '(stroke|fill|class)'},
   }]
 })
 
