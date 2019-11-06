@@ -38,6 +38,11 @@ export default async (config: Config) => {
     process.exit(1)
   }
 
+  if(typeof icons === 'undefined') {
+    console.error(chalk.red(`The option 'icons' is not provided.`))
+    process.exit(1)
+  }
+
   if (!Array.isArray(icons)) {
     icons = [icons]
   }
