@@ -15,4 +15,4 @@ yarn-error.log*
 *.iml
 package-lock.json
 
-test/dist
+dist/
