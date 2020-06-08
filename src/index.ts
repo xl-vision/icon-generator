@@ -3,14 +3,19 @@ import chalk from 'chalk'
 import path from 'path'
 import fs from 'fs-extra'
 import glob from 'glob-promise'
-import svgo from './utils/svgo'
+import Svgo from 'svgo'
 import htmlParse from './utils/htmlParse'
 
 const defaultFormater = (name: string) => name
 
+export type SvgoPlugin = {
+  [name: string]: any
+}
+
 export type IconOption = {
   src: string
   dest: string
+  svgoPlugins?: SvgoPlugin | Array<SvgoPlugin>
   nameFormatter?: (
     name: string
   ) =>
@@ -25,10 +30,25 @@ export type Config = {
   template: string
   icons: IconOption | Array<IconOption>
   helpers?: handlebars.HelperDeclareSpec
+  svgoPlugins?: SvgoPlugin | Array<SvgoPlugin>
+}
+
+const getSvgo = (svgoPlugins?: SvgoPlugin | Array<SvgoPlugin>) => {
+  const plugins: Array<any> = []
+
+  if (Array.isArray(svgoPlugins)) {
+    plugins.push(...svgoPlugins)
+  } else if (!svgoPlugins) {
+    plugins.push(svgoPlugins)
+  }
+
+  return new Svgo({ full: true, plugins })
 }
 
 export default async (config: Config) => {
-  let { template, icons, helpers } = config
+  let { template, icons, helpers, svgoPlugins } = config
+
+  const defaultSvgo = getSvgo(svgoPlugins)
 
   if (!template) {
     console.error(chalk.red(`No template is provided.`))
@@ -66,7 +86,7 @@ export default async (config: Config) => {
   const compiler = handlebars.compile(templateContent)
 
   for (const icon of icons) {
-    await renderIcon(compiler, FILE_EXT, icon)
+    await renderIcon(compiler, FILE_EXT, icon, defaultSvgo)
   }
 }
 
@@ -76,9 +96,19 @@ const getAbsolutePath = (dir: string) =>
 const renderIcon = async (
   compiler: handlebars.TemplateDelegate,
   ext: string,
-  icon: IconOption
+  icon: IconOption,
+  defaultSvgo: Svgo
 ) => {
-  const { src, dest: _dest, nameFormatter = defaultFormater } = icon
+  const {
+    src,
+    dest: _dest,
+    nameFormatter = defaultFormater,
+    svgoPlugins,
+  } = icon
+
+  if (svgoPlugins) {
+    defaultSvgo = getSvgo(svgoPlugins)
+  }
 
   if (!src) {
     console.error(chalk.red(`No icon source path is provided.`))
@@ -118,7 +148,7 @@ const renderIcon = async (
       encoding: 'utf-8',
     })
 
-    const svgoObj = await svgo.optimize(content)
+    const svgoObj = await defaultSvgo.optimize(content)
 
     const node = await htmlParse(svgoObj.data)
     const compileContent = compiler({
