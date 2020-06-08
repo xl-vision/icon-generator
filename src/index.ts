@@ -9,21 +9,26 @@ import htmlParse from './utils/htmlParse'
 const defaultFormater = (name: string) => name
 
 export type IconOption = {
-  src: string,
-  dest: string,
-  nameFormatter?: (name: string) => string | {
-    name: string,
-    filename: string
-  },
+  src: string
+  dest: string
+  nameFormatter?: (
+    name: string
+  ) =>
+    | string
+    | {
+        name: string
+        filename: string
+      }
 }
 
 export type Config = {
-  template: string,
+  template: string
   icons: IconOption | Array<IconOption>
+  helpers: handlebars.HelperDeclareSpec
 }
 
 export default async (config: Config) => {
-  let { template, icons } = config
+  let { template, icons, helpers } = config
 
   if (!template) {
     console.error(chalk.red(`No template is provided.`))
@@ -32,13 +37,12 @@ export default async (config: Config) => {
 
   template = getAbsolutePath(template)
 
-
   if (!fs.existsSync(template)) {
     console.error(chalk.red(`The template path: '${template}' does not exist.`))
     process.exit(1)
   }
 
-  if(typeof icons === 'undefined') {
+  if (typeof icons === 'undefined') {
     console.error(chalk.red(`The option 'icons' is not provided.`))
     process.exit(1)
   }
@@ -50,8 +54,12 @@ export default async (config: Config) => {
   const FILE_EXT = path.extname(template)
 
   const templateContent = await fs.readFile(template, {
-    encoding: 'utf-8'
+    encoding: 'utf-8',
   })
+
+  for (const name of Object.keys(helpers)) {
+    handlebars.registerHelper(name, helpers[name])
+  }
 
   const compiler = handlebars.compile(templateContent)
 
@@ -60,9 +68,14 @@ export default async (config: Config) => {
   }
 }
 
-const getAbsolutePath = (dir: string) => path.isAbsolute(dir) ? dir : path.join(process.cwd(), dir)
+const getAbsolutePath = (dir: string) =>
+  path.isAbsolute(dir) ? dir : path.join(process.cwd(), dir)
 
-const renderIcon = async (compiler: handlebars.TemplateDelegate, ext: string, icon: IconOption) => {
+const renderIcon = async (
+  compiler: handlebars.TemplateDelegate,
+  ext: string,
+  icon: IconOption
+) => {
   const { src, dest: _dest, nameFormatter = defaultFormater } = icon
 
   if (!src) {
@@ -79,25 +92,28 @@ const renderIcon = async (compiler: handlebars.TemplateDelegate, ext: string, ic
 
   const files = await glob(src)
 
-  const fileInfos = files.map(it => {
+  const fileInfos = files.map((it) => {
     const filename = path.basename(it, path.extname(it))
     const formatter = nameFormatter(filename)
-    const nameObj = typeof formatter === 'string' ? {
-      filename: formatter,
-      // 名称必须时驼峰格式
-      name: toCamel(formatter)
-    } : formatter
+    const nameObj =
+      typeof formatter === 'string'
+        ? {
+            filename: formatter,
+            // 名称必须时驼峰格式
+            name: toCamel(formatter),
+          }
+        : formatter
 
     return {
       src: it,
-      ...nameObj
+      ...nameObj,
     }
   })
 
   for (const info of fileInfos) {
     const absolutePath = getAbsolutePath(info.src)
     const content = await fs.readFile(absolutePath, {
-      encoding: 'utf-8'
+      encoding: 'utf-8',
     })
 
     const svgoObj = await svgo.optimize(content)
@@ -106,20 +122,18 @@ const renderIcon = async (compiler: handlebars.TemplateDelegate, ext: string, ic
     const compileContent = compiler({
       filename: info.filename,
       name: info.name,
-      node
+      node,
     })
 
     const outputPath = path.join(dest, `${info.filename}${ext}`)
 
     await fs.outputFile(outputPath, compileContent)
-
   }
-
 }
 
 /**
  * 首字母大写
- * @param name 
+ * @param name
  */
 const toCamel = (name: string) => {
   const ret = name.replace(/\-(\w)/g, function (all, letter) {
