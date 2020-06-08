@@ -70,6 +70,6 @@ export default new SVGOptim({
   }, {
     removeDimensions: true,
   }, {
-    removeAttrs: { attrs: '(stroke|fill|class)' },
+    removeAttrs: { attrs: '(class)' },
   }]
 })
