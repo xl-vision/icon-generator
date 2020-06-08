@@ -24,7 +24,7 @@ export type IconOption = {
 export type Config = {
   template: string
   icons: IconOption | Array<IconOption>
-  helpers: handlebars.HelperDeclareSpec
+  helpers?: handlebars.HelperDeclareSpec
 }
 
 export default async (config: Config) => {
@@ -57,8 +57,10 @@ export default async (config: Config) => {
     encoding: 'utf-8',
   })
 
-  for (const name of Object.keys(helpers)) {
-    handlebars.registerHelper(name, helpers[name])
+  if (helpers) {
+    for (const name of Object.keys(helpers)) {
+      handlebars.registerHelper(name, helpers[name])
+    }
   }
 
   const compiler = handlebars.compile(templateContent)
